@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/jackie15910/tinyapp/issues"
   },
-  "homepage": "https://github.com/jackie15910/tinyapp#readme"
+  "homepage": "https://github.com/jackie15910/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
