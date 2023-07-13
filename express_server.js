@@ -57,7 +57,7 @@ const users = {
 //Create a function named urlsForUser(id) which returns the URLs where
 //the userID is equal to the id of the currently logged-in user.
 
-function getUrlsForUser(id) {
+function urlsForUser(id) {
   const urls = {};
   console.log("userid", id);
   for(let IDs in urlDatabase) {
@@ -106,8 +106,8 @@ app.get("/urls", (req, res) => {
   if (!req.cookies.user_id) {
     res.send("Please log in at <a>http://localhost:8080/login</a> before lookinga at URLs, if you don't have an account, register at <a>http://localhost:8080/register</a>");
   }
-  const urlsForUser = getUrlsForUser(req.cookies.user_id);
-  const templateVars = { urls: urlsForUser, user_id: req.cookies.user_id};
+  const getUrlsForUser = urlsForUser(req.cookies.user_id);
+  const templateVars = { urls: getUrlsForUser, user_id: req.cookies.user_id};
   res.render("urls_index", templateVars);
 });
 
@@ -169,15 +169,34 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
+  let userID = req.cookies.user_id;
+  const urlID = urlDatabase[req.params.id].userID;
+  if (!req.cookies.user_id) {
+    res.send("Error: User is not logged in and/or ID does not exist\n");
+    return
+  }
+  if (urlID !== userID) {
+    res.send("Error: User does not own this URL\n");
+    return
+  }
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
 
 app.post("/urls/:id", (req, res) => {
+  let userID = req.cookies.user_id;
+  const urlID = urlDatabase[req.params.id].userID;
+  if (!req.cookies.user_id) {
+    res.send("Error: User is not logged in and/or ID does not exist\n");
+    return
+  }
+  if (urlID !== userID) {
+    res.send("Error: User does not own this URL\n");
+    return
+  }
   urlDatabase[req.params.id].longURL = req.body.longURL
   res.redirect("/urls");
 });
-
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
