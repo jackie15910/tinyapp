@@ -19,11 +19,13 @@ function generateRandomString(length = 6) {
 
 function userLookup(emailAddress) {
   for (let userID in users) {
-    if (users[userID.email] ==  emailAddress) {
+    if (users[userID].email ==  emailAddress) {
       return users[userID];
     }
+    else {
+      return null;
+    }
   }
-  return null;
 };
 
 const urlDatabase = {
@@ -104,18 +106,17 @@ app.post("/register", (req, res) => {
 
 app.post("/login", (req, res) => {
   const registered = userLookup(req.body.email);
-  console.log(rec.body.email);
-  if (req.body.email == "" || req.body.password == ""  || registered === null) {
-    res.status(400).send('Bad Request');
+  if (req.body.email == "" || req.body.password == "" || registered === null || req.body.password !== registered.password) {
+    res.status(403).send('Bad Request');
   } else {
-    res.cookie('username', req.body.username);
+    res.cookie('user_id', `${registered.id}`);
     res.redirect("/urls");
   }
 });
 
 app.post("/logout", (req, res) => {
   res.clearCookie('user_id', req.body.user_id);
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
