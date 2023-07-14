@@ -20,6 +20,9 @@ function generateRandomString(length = 6) {
   return randomString;
 };
 
+const users = {
+};
+
 function userLookup(emailAddress) {
   for (let userID in users) {
     if (users[userID].email ===  emailAddress) {
@@ -40,8 +43,7 @@ const urlDatabase = {
   },
 };
 
-const users = {
-};
+
 
 function urlsForUser(id) {
   const urls = {};
@@ -77,7 +79,7 @@ app.get("/urls/new", (req, res) => {
   if (!req.session.user_id) {
     res.redirect("/login");
   } else {
-  const templateVars = {user_id: req.session.user_id};
+  const templateVars = {user_id: req.session.user_id, users};
   res.render("urls_new", templateVars);
   }
 });
@@ -91,12 +93,12 @@ app.get("/urls", (req, res) => {
     res.send("Please log in at <a>http://localhost:8080/login</a> before lookinga at URLs, if you don't have an account, register at <a>http://localhost:8080/register</a>");
   }
   const getUrlsForUser = urlsForUser(req.session.user_id);
-  const templateVars = { urls: getUrlsForUser, user_id: req.session.user_id};
+  const templateVars = { urls: getUrlsForUser, user_id: req.session.user_id, users};
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id, users };
   if (!urlDatabase[req.params.id]) {
     res.send("ID does not exist");
     return;
