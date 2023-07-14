@@ -1,11 +1,14 @@
 const express = require("express");
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session')
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser())
-
+app.use(cookieSession({
+  name: 'session',
+  keys: ['user_id','registeredID']
+}));
 
 function generateRandomString(length = 6) {
   const alphanumeric = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -38,31 +41,37 @@ const urlDatabase = {
 };
 
 const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-  aJ48lW: {
-    id: "aJ48lW",
-    email: "Jackie@gmail.com",
-    password: "password123",
-  }
+  // userRandomID: {
+  //   id: "userRandomID",
+  //   email: "user@example.com",
+  //   password: "purple-monkey-dinosaur",
+  // },
+  // user2RandomID: {
+  //   id: "user2RandomID",
+  //   email: "user2@example.com",
+  //   password: "dishwasher-funk",
+  // },
+  // aJ48lW: {
+  //   id: "aJ48lW",
+  //   email: "Jackie@gmail.com",
+  //   password: "password123",
+  // }
 };
 //Create a function named urlsForUser(id) which returns the URLs where
 //the userID is equal to the id of the currently logged-in user.
 
+for (let userId in users) {
+  let user = users[userId];
+  if (!bcrypt.compareSync(user.password, user.password)) {
+    // The password is not a bcrypt hash, so hash it
+    user.password = bcrypt.hashSync(user.password, 10);
+  }
+}
+
 function urlsForUser(id) {
   const urls = {};
-  console.log("userid", id);
   for(let IDs in urlDatabase) {
     if (urlDatabase[IDs].userID === id) {
-      console.log("url found", IDs);
       urls[IDs] = urlDatabase[IDs];
     }
   }
@@ -74,7 +83,9 @@ app.get("/", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  if (req.cookies.user_id) {
+  console.log(req + "@@@@@@@@@@");
+  console.log(res + "########");
+  if (req.session.user_id) {
     res.redirect("/urls");
   } else {
   res.render("register");
@@ -82,7 +93,9 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  if (req.cookies.user_id) {
+  console.log(req + "@@@@@@@@@@");
+  console.log(res + "########");
+  if (req.session.user_id) {
     res.redirect("/urls");
   } else {
   res.render("login");
@@ -90,10 +103,10 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies.user_id) {
+  if (!req.session.user_id) {
     res.redirect("/login");
   } else {
-  const templateVars = {user_id: req.cookies.user_id};
+  const templateVars = {user_id: req.session.user_id};
   res.render("urls_new", templateVars);
   }
 });
@@ -103,16 +116,16 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  if (!req.cookies.user_id) {
+  if (!req.session.user_id) {
     res.send("Please log in at <a>http://localhost:8080/login</a> before lookinga at URLs, if you don't have an account, register at <a>http://localhost:8080/register</a>");
   }
-  const getUrlsForUser = urlsForUser(req.cookies.user_id);
-  const templateVars = { urls: getUrlsForUser, user_id: req.cookies.user_id};
+  const getUrlsForUser = urlsForUser(req.session.user_id);
+  const templateVars = { urls: getUrlsForUser, user_id: req.session.user_id};
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.cookies.user_id };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id };
   if (!urlDatabase[req.params.id]) {
     res.send("ID does not exist");
     return;
@@ -131,11 +144,12 @@ app.get("/hello", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  if (!req.cookies.user_id) {
+  if (!req.session.user_id) {
     res.send("Please log in before creating short URLs");
     return;
   }
   const id = generateRandomString();
+  console.log(req.body.longURL);
   urlDatabase[req.params.id].longURL = req.body.longURL
   res.redirect(`/urls/${id}`);
 });
@@ -146,32 +160,32 @@ app.post("/register", (req, res) => {
   if (req.body.email == "" || req.body.password == "" || registered !== null) {
     res.status(400).send('Bad Request');
   } else {
-    res.cookie('user_id', id);
-    users[id] = {email: req.body.email, password: req.body.password}
+    req.session.user_id = id;
+    let hashedPassword = bcrypt.hashSync(req.body.password,10);
+    users[id] = {email: req.body.email, password: hashedPassword}
     res.redirect("/urls");
-    console.log();
   }
 });
 
 app.post("/login", (req, res) => {
   const registered = userLookup(req.body.email);
-  if (req.body.email == "" || req.body.password == "" || registered === null || req.body.password !== registered.password) {
+  if (req.body.email == "" || req.body.password == "" || registered === null || bcrypt.compareSync(req.body.password, registered.password) === false) {
     res.status(403).send('Bad Request');
   } else {
-    res.cookie('user_id', `${registered.id}`);
+    req.session.user_id = `${registered.id}`;
     res.redirect("/urls");
   }
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id', req.body.user_id);
+  req.session = null
   res.redirect("/login");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  let userID = req.cookies.user_id;
+  let userID = req.session.user_id;
   const urlID = urlDatabase[req.params.id].userID;
-  if (!req.cookies.user_id) {
+  if (!req.session.user_id) {
     res.send("Error: User is not logged in and/or ID does not exist\n");
     return
   }
@@ -184,9 +198,9 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  let userID = req.cookies.user_id;
+  let userID = req.session.user_id;
   const urlID = urlDatabase[req.params.id].userID;
-  if (!req.cookies.user_id) {
+  if (!req.session.user_id) {
     res.send("Error: User is not logged in and/or ID does not exist\n");
     return
   }
