@@ -87,7 +87,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id) { //Checks if user is logged in
     res.send("Please log in at <a>http://localhost:8080/login</a> before lookinga at URLs, if you don't have an account, register at <a>http://localhost:8080/register</a>");
   }
   const getUrlsForUser = urlsForUser(req.session.user_id);
@@ -114,8 +114,8 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-app.post("/urls", (req, res) => {
-  if (!req.session.user_id) {
+app.post("/urls", (req, res) => { //Creates a new shortURL for longURL
+  if (!req.session.user_id) { //Checks for possible functionality bypass
     res.send("Please log in before creating short URLs");
     return;
   }
@@ -125,7 +125,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
-app.post("/register", (req, res) => {
+app.post("/register", (req, res) => { //Creates an account with generated ID and hashed password
   const id = generateRandomString();
   const registered = userLookup(req.body.email);
   if (req.body.email == "" || req.body.password == "" || registered !== null) {
@@ -139,25 +139,25 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const registered = userLookup(req.body.email);
+  const registered = userLookup(req.body.email); //Will redirect to urls if already registered
 
   if (req.body.email == "" || req.body.password == "" || registered === null || bcrypt.compareSync(req.body.password, registered.password) === false) {
     res.status(403).send('Bad Request');
   } else {
-    req.session.user_id = registered.id;
+    req.session.user_id = registered.id; //Uses the already created ID
     res.redirect("/urls");
   }
 });
 
 app.post("/logout", (req, res) => {
-  req.session = null
+  req.session = null //Clears cookies
   res.redirect("/login");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
   let userID = req.session.user_id;
   const urlID = urlDatabase[req.params.id].userID;
-  if (!req.session.user_id) {
+  if (!req.session.user_id) { //Checks for bypass cases
     res.send("Error: User is not logged in and/or ID does not exist\n");
     return
   }
@@ -169,7 +169,7 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:id", (req, res) => {
+app.post("/urls/:id", (req, res) => { //Edits the URL
   let userID = req.session.user_id;
   const urlID = urlDatabase[req.params.id].userID;
   if (!req.session.user_id) {
