@@ -41,32 +41,7 @@ const urlDatabase = {
 };
 
 const users = {
-  // userRandomID: {
-  //   id: "userRandomID",
-  //   email: "user@example.com",
-  //   password: "purple-monkey-dinosaur",
-  // },
-  // user2RandomID: {
-  //   id: "user2RandomID",
-  //   email: "user2@example.com",
-  //   password: "dishwasher-funk",
-  // },
-  // aJ48lW: {
-  //   id: "aJ48lW",
-  //   email: "Jackie@gmail.com",
-  //   password: "password123",
-  // }
 };
-//Create a function named urlsForUser(id) which returns the URLs where
-//the userID is equal to the id of the currently logged-in user.
-
-for (let userId in users) {
-  let user = users[userId];
-  if (!bcrypt.compareSync(user.password, user.password)) {
-    // The password is not a bcrypt hash, so hash it
-    user.password = bcrypt.hashSync(user.password, 10);
-  }
-}
 
 function urlsForUser(id) {
   const urls = {};
@@ -83,8 +58,6 @@ app.get("/", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  console.log(req + "@@@@@@@@@@");
-  console.log(res + "########");
   if (req.session.user_id) {
     res.redirect("/urls");
   } else {
@@ -93,8 +66,6 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  console.log(req + "@@@@@@@@@@");
-  console.log(res + "########");
   if (req.session.user_id) {
     res.redirect("/urls");
   } else {
@@ -149,8 +120,8 @@ app.post("/urls", (req, res) => {
     return;
   }
   const id = generateRandomString();
-  console.log(req.body.longURL);
-  urlDatabase[req.params.id].longURL = req.body.longURL
+  const longURL = req.body.longURL;
+  urlDatabase[id] = {longURL: longURL, userID: req.session.user_id};
   res.redirect(`/urls/${id}`);
 });
 
@@ -162,17 +133,18 @@ app.post("/register", (req, res) => {
   } else {
     req.session.user_id = id;
     let hashedPassword = bcrypt.hashSync(req.body.password,10);
-    users[id] = {email: req.body.email, password: hashedPassword}
+    users[id] = {id: req.session.user_id, email: req.body.email, password: hashedPassword}
     res.redirect("/urls");
   }
 });
 
 app.post("/login", (req, res) => {
   const registered = userLookup(req.body.email);
+
   if (req.body.email == "" || req.body.password == "" || registered === null || bcrypt.compareSync(req.body.password, registered.password) === false) {
     res.status(403).send('Bad Request');
   } else {
-    req.session.user_id = `${registered.id}`;
+    req.session.user_id = registered.id;
     res.redirect("/urls");
   }
 });
