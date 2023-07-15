@@ -6,6 +6,7 @@ const PORT = 8080; // default port 8080
 app.use(express.urlencoded({ extended: true }));
 const {getUserByEmail, generateRandomString, urlsForUser} = require('./helpers.js');
 const cookieSession = require('cookie-session');
+const { redirect } = require("express/lib/response.js");
 app.use(cookieSession({
   name: 'session',
   keys: ['user_id']
@@ -26,7 +27,17 @@ const urlDatabase = {
 };
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const templateVars = {user_id: req.session.user_id, users};
+  const user = users[req.session.user_id];
+  if (!req.session.user_id) { //check if user has a cookie
+    res.redirect("login");
+  }
+  if (!user) { //Catches bypass
+    res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
+  }
+  else if (user) { //Checks if user is logged in
+    res.redirect("/urls");
+  }
 });
 
 app.get("/register", (req, res) => {
@@ -48,14 +59,14 @@ app.get("/login", (req, res) => {
     res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
   }
   else if (user) { //Checks if user is logged in
-    res.render("urls", templateVars);
+    res.redirect("/urls");
   }
 });
 
 app.get("/urls/new", (req, res) => {
   const templateVars = {user_id: req.session.user_id, users};
   if (!req.session.user_id) {
-    res.redirect("/login", templateVars);
+    res.redirect("/login");
   } else {
     res.render("urls_new", templateVars);
   }
@@ -67,15 +78,15 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const user = users[req.session.user_id];
-  if (!req.session.user_id) { //check if user has a cookie
+  if (!req.session.user_id) { // Check if user has a cookie
     res.redirect("/login");
+  } else if (!user) { // Catch bypass
+    res.send("Please <a href='/login'> login</a> before looking at URLs. If you don't have an account, please <a href='/register'>register</a> before accessing this site.");
+  } else {
+    const getUrlsForUser = urlsForUser(req.session.user_id, urlDatabase);
+    const templateVars = { urls: getUrlsForUser, user_id: req.session.user_id, users };
+    res.render("urls_index", templateVars);
   }
-  if (!user) { //Catches bypass
-    res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
-  }
-  const getUrlsForUser = urlsForUser(req.session.user_id, urlDatabase);
-  const templateVars = { urls: getUrlsForUser, user_id: req.session.user_id, users};
-  res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
