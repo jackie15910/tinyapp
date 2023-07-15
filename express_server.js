@@ -103,7 +103,7 @@ app.get("/urls/:id", (req, res) => {
   if (!user) { //Catches bypass
     res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
   }
-  else if (!urlCheck[req.params.id]) {
+  else if (!urlCheck[req.params.id]) { //Checks if user owns the URL
     res.send("Error: You do not own this URL.");
   } else {
     res.render("urls_show", templateVars);
@@ -193,18 +193,29 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id", (req, res) => { //Edits the URL
   let userID = req.session.user_id;
   const urlID = urlDatabase[req.params.id].userID;
-  if (!req.session.user_id) {
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id, users };
+  if (!req.session.user_id) { //check if user has a cookie
+    res.send("Error: User is not logged in and/or ID does not exist\n");
+  }
+  else if (!user) { //Catches bypass
+    res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
+  }
+  else if (!req.session.user_id) {
     res.send("Error: User is not logged in and/or ID does not exist\n");
     return;
   }
-  if (urlID !== userID) {
+  else if (urlID !== userID) {
     res.send("Error: User does not own this URL\n");
     return;
-  }
+  } else {
   urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect("/urls");
+}
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
