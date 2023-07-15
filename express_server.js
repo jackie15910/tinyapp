@@ -91,9 +91,20 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id, users };
+  const user = users[req.session.user_id];
+  const urlCheck = urlsForUser(req.session.user_id, urlDatabase);
   if (!urlDatabase[req.params.id]) {
     res.send("ID does not exist");
     return;
+  }
+  if (!req.session.user_id) { //check if user has a cookie
+    res.send("Error: User is not logged in and/or ID does not exist\n");
+  }
+  if (!user) { //Catches bypass
+    res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
+  }
+  else if (!urlCheck[req.params.id]) {
+    res.send("Error: You do not own this URL.");
   } else {
     res.render("urls_show", templateVars);
   }
