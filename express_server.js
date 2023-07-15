@@ -7,24 +7,11 @@ app.use(express.urlencoded({ extended: true }));
 const {getUserByEmail, generateRandomString, urlsForUser} = require('./helpers.js');
 const cookieSession = require('cookie-session');
 const { redirect } = require("express/lib/response.js");
+const {users, urlDatabase} = require('./database.js');
 app.use(cookieSession({
   name: 'session',
   keys: ['user_id']
 }));
-
-const users = {
-};
-
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-};
 
 app.get("/", (req, res) => {
   const templateVars = {user_id: req.session.user_id, users};
@@ -90,16 +77,15 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id, users };
-  const user = users[req.session.user_id];
-  const urlCheck = urlsForUser(req.session.user_id, urlDatabase);
-  if (!urlDatabase[req.params.id]) {
-    res.send("ID does not exist");
-    return;
-  }
   if (!req.session.user_id) { //check if user has a cookie
     res.send("Error: User is not logged in and/or ID does not exist\n");
   }
+  if (!urlDatabase[req.params.id]) {
+    res.send("ID does not exist");
+  }
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id, users };
+  const user = users[req.session.user_id];
+  const urlCheck = urlsForUser(req.session.user_id, urlDatabase);
   if (!user) { //Catches bypass
     res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
   }
@@ -111,6 +97,9 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    res.send("ID does not exist");
+  }
   const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
@@ -162,7 +151,7 @@ app.post("/login", (req, res) => {
   else if (password === "") {
     res.status(403).send("Please type a password <a href='/login'> Try again</a>");
   } 
-  else if (bcrypt.compareSync(password, user.password) === false || user === undefined) {
+  else if (bcrypt.compareSync(password, users.password) === false || user === undefined) {
     res.send("User not found. Please <a href='/login'> Try again</a>");
   } else {
     req.session.user_id = user.id; //Uses the already created ID
@@ -190,7 +179,7 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:id", (req, res) => { //Edits the URL
+app.post("/urls/:id", (req, res) => { //Edits the long URL
   let userID = req.session.user_id;
   const urlID = urlDatabase[req.params.id].userID;
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id, users };
