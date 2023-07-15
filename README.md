@@ -11,14 +11,6 @@ URL shortening: Logged-in users can create shortened URLs for any long URL they 
 
 URL management: Users can view, edit, and delete their shortened URLs. They can also access the original long URL by clicking on the short URL.
 
-## Final Product
-!["Registration page"](/Images/Register.jpg)
-!["Empty main url page"](/Images/Main%20URL.jpg)
-!["Shortening a new URL"](/Images/Shorten%20new%20URL.jpg)
-!["Display and edit URL"](/Images/Display%20and%20edit%20URL.jpg)
-!["Display edit delete your URLs"](/Images/Display%20edit%20delete%20all%20URLs.jpg)
-!["Using the short url"](/Images/Short%20URL.jpg)
-
 ## Dependencies
 
 - Node.js
@@ -46,3 +38,11 @@ URL management: Users can view, edit, and delete their shortened URLs. They can 
 7. Click on the short URL to visit the original long URL.
 8. Edit or delete your URLs using the corresponding buttons on the URLs page.
 9. Log out by clicking on the "Logout" button.
+
+## Final Product
+!["Registration page"](/Images/Register.jpg)
+!["Login page"](/Images/Login.jpg)
+!["Shortening a new URL"](/Images/Shorten%20new%20URL.jpg)
+!["Main url page"](/Images/Main%20URL%20Page.jpg)
+!["Display and edit URL"](/Images/Show%20and%20Edit%20Page.jpg)
+!["Using the short url"](/Images/Short%20URL.jpg)
