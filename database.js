@@ -1,6 +1,6 @@
 const users = {
-  // id: "userID", 
-  // email: "email", 
+  // id: "userID",
+  // email: "email",
   // password: "hashed password"
 };
 

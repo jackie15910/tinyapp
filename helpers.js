@@ -1,12 +1,10 @@
-
-
 getUserByEmail = (emailAddress, database) => {
   for (let id in database) {
     if (database[id].email ===  emailAddress) {
       return database[id];
     }
   }
-}
+};
 
 generateRandomString = (length = 6) => {
   const alphanumeric = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -16,7 +14,7 @@ generateRandomString = (length = 6) => {
     randomString += alphanumeric.charAt(randomIndex);
   }
   return randomString;
-}
+};
 
 urlsForUser = (id, database) => {
   const urls = {};
@@ -26,6 +24,6 @@ urlsForUser = (id, database) => {
     }
   }
   return urls;
-}
+};
 
 module.exports = {getUserByEmail, generateRandomString, urlsForUser};

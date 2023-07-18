@@ -21,8 +21,7 @@ app.get("/", (req, res) => {
   }
   if (!user) { //Catches bypass
     res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
-  }
-  else if (user) { //Checks if user is logged in
+  } else if (user) { //Checks if user is logged in
     res.redirect("/urls");
   }
 });
@@ -41,13 +40,13 @@ app.get("/login", (req, res) => {
   const user = users[req.session.user_id];
   if (!req.session.user_id) { //check if user has a cookie
     res.render("login", templateVars);
+    return;
   }
   if (!user) { //Catches bypass
     res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
+    return;
   }
-  else if (user) { //Checks if user is logged in
-    res.redirect("/urls");
-  }
+  res.redirect("/urls");
 });
 
 app.get("/urls/new", (req, res) => {
@@ -88,8 +87,7 @@ app.get("/urls/:id", (req, res) => {
   const urlCheck = urlsForUser(req.session.user_id, urlDatabase);
   if (!user) { //Catches bypass
     res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
-  }
-  else if (!urlCheck[req.params.id]) { //Checks if user owns the URL
+  } else if (!urlCheck[req.params.id]) { //Checks if user owns the URL
     res.send("Error: You do not own this URL.");
   } else {
     res.render("urls_show", templateVars);
@@ -125,14 +123,11 @@ app.post("/register", (req, res) => { //Creates an account with generated ID and
   const password = req.body.password;
   const id = generateRandomString();
   const user = getUserByEmail(req.body.email, users);
-  if (password === "") {
-    res.status(403).send("Please type a password <a href='/login'> Try again</a>");
-  } 
-  else if (email === "") {
-    res.status(403).send("Please type an email <a href='/login'> Try again</a>");
-  }
-  else if (user !== undefined) {
-      res.send("Email exists. Please <a href='/register'> Try again</a>");
+  if (!email || !password) {
+    res.status(403).send("Please provide both email and password <a href='/login'> Try again</a>");
+    return;
+  } else if (user !== undefined) {
+    res.send("Email exists. Please <a href='/register'> Try again</a>");
   } else {
     req.session.user_id = id;
     let hashedPassword = bcrypt.hashSync(req.body.password,10);
@@ -145,14 +140,11 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = getUserByEmail(email, users); //Will redirect to urls if already registered
-  if (email === "") {
-    res.status(403).send("Please type an email <a href='/login'> Try again</a>");
-  }
-  else if (password === "") {
-    res.status(403).send("Please type a password <a href='/login'> Try again</a>");
-  } 
-  else if (bcrypt.compareSync(password, users.password) === false || user === undefined) {
-    res.send("User not found. Please <a href='/login'> Try again</a>");
+  if (!email || !password) {
+    res.status(403).send("Please provide both email and password <a href='/login'> Try again</a>");
+    return;
+  } else if (!user || !bcrypt.compareSync(password, user.password)) {
+    res.send("Invalid email or password, user not found. Please <a href='/login'> Try again</a>");
   } else {
     req.session.user_id = user.id; //Uses the already created ID
     res.redirect("/urls");
@@ -162,6 +154,7 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   req.session = null; //Clears cookies
   res.redirect("/login");
+  return;
 });
 
 app.post("/urls/:id/delete", (req, res) => {
@@ -181,25 +174,20 @@ app.post("/urls/:id/delete", (req, res) => {
 
 app.post("/urls/:id", (req, res) => { //Edits the long URL
   let userID = req.session.user_id;
+  const user = users[req.session.user_id];
   const urlID = urlDatabase[req.params.id].userID;
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user_id: req.session.user_id, users };
   if (!req.session.user_id) { //check if user has a cookie
     res.send("Error: User is not logged in and/or ID does not exist\n");
-  }
-  else if (!user) { //Catches bypass
+  } else if (!user) { //Catches bypass
     res.send("Please <a href='/login'> login</a> before lookinga at URLs, if you don't have an account, please <a href='/register'> register</a> before accessing this site");
-  }
-  else if (!req.session.user_id) {
-    res.send("Error: User is not logged in and/or ID does not exist\n");
-    return;
-  }
-  else if (urlID !== userID) {
+  } else if (urlID !== userID) {
     res.send("Error: User does not own this URL\n");
     return;
   } else {
-  urlDatabase[req.params.id].longURL = req.body.longURL;
-  res.redirect("/urls");
-}
+    urlDatabase[req.params.id].longURL = req.body.longURL;
+    res.redirect("/urls");
+  }
 });
 
 
